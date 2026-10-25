@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Signal Room — Executive Decision Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --paper:#fbf6ee; --paper2:#f3ebdd; --ink:#1d1a2e; --ink2:#55506b; --line:#e2d7c5;
+  --coral:#ff5d5d; --tang:#ff9f1c; --lime:#2ec4b6; --violet:#7b4dff; --sky:#2d9cdb; --pink:#e8478b;
+  --card:#ffffff; --shadow:0 2px 0 var(--ink), 0 10px 30px rgba(29,26,46,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;line-height:1.5;overflow-x:hidden}
+.mono{font-family:'JetBrains Mono',monospace}
+h1,h2,h3{font-family:'Fraunces',serif;letter-spacing:-.02em}
+a{color:inherit}
+
+/* ===== Masthead: newspaper-like ===== */
+.mast{border-bottom:3px double var(--ink);padding:14px 28px 10px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:.8rem}
+.mast .brand{font-family:'Fraunces';font-weight:900;font-size:1.15rem;display:flex;gap:8px;align-items:center}
+.mast .brand i{width:14px;height:14px;border-radius:50%;background:conic-gradient(var(--coral),var(--tang),var(--lime),var(--violet),var(--coral));display:inline-block;animation:spin 6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ticker{flex:1;overflow:hidden;white-space:nowrap;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);min-width:200px}
+.ticker span{display:inline-block;animation:tick 40s linear infinite;padding-left:100%}
+.ticker b.up{color:#0b9b6a}.ticker b.dn{color:var(--coral)}
+@keyframes tick{to{transform:translateX(-100%)}}
+
+/* ===== Hero: split headline + "noise to signal" canvas ===== */
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:28px;padding:44px 28px 30px;max-width:1320px;margin:auto;align-items:center}
+.kicker{display:inline-flex;gap:8px;align-items:center;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;background:var(--ink);color:var(--paper);padding:5px 12px;border-radius:99px}
+.hero h1{font-size:clamp(2.4rem,5.4vw,4.6rem);line-height:.98;margin:18px 0}
+.hero h1 em{font-style:italic;background:linear-gradient(90deg,var(--coral),var(--tang) 40%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lede{font-size:1.1rem;color:var(--ink2);max-width:560px}
+.hero .stats{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+.pill{border:2px solid var(--ink);border-radius:14px;padding:10px 14px;background:var(--card);box-shadow:3px 3px 0 var(--ink)}
+.pill b{font-family:'Fraunces';font-size:1.6rem;display:block;line-height:1}
+.pill small{font-size:.72rem;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em}
+.noisebox{position:relative;border:2px solid var(--ink);border-radius:22px;background:var(--ink);overflow:hidden;aspect-ratio:1.15;box-shadow:8px 8px 0 var(--tang)}
+#noise{width:100%;height:100%;display:block}
+.noisebox .ctl{position:absolute;left:14px;right:14px;bottom:14px;background:rgba(251,246,238,.95);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:12px;font-size:.82rem}
+.noisebox .ctl input{flex:1}
+.noisebox .lbl{position:absolute;top:14px;left:14px;color:var(--paper);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;opacity:.8}
+.noisebox .count{position:absolute;top:10px;right:14px;color:var(--paper);font-family:'Fraunces';font-size:2rem;font-weight:900}
+.noisebox .count small{font-size:.7rem;font-family:'Space Grotesk';opacity:.7;display:block;text-align:right;font-weight:400}
+
+/* ===== Chapter rail (vertical sticky left) ===== */
+.layout{display:grid;grid-template-columns:200px 1fr;gap:0;max-width:1320px;margin:auto;padding:0 28px 60px}
+.rail{position:sticky;top:16px;align-self:start;padding-top:24px}
+.rail a{display:flex;gap:10px;align-items:center;text-decoration:none;padding:8px 6px;font-size:.88rem;color:var(--ink2);border-left:3px solid var(--line);transition:.2s}
+.rail a span{font-family:'JetBrains Mono';font-size:.7rem;opacity:.7}
+.rail a.on{color:var(--ink);border-color:var(--coral);font-weight:700;background:linear-gradient(90deg,rgba(255,93,93,.1),transparent)}
+main{min-width:0}
+.chap{padding:36px 0 18px;border-top:1px dashed var(--line)}
+.chap:first-child{border-top:0}
+.chhead{display:flex;align-items:baseline;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.chhead .no{font-family:'Fraunces';font-weight:900;font-size:3.4rem;line-height:.8;-webkit-text-stroke:2px var(--ink);color:transparent}
+.chhead h2{font-size:clamp(1.6rem,3vw,2.3rem)}
+.chhead p{width:100%;color:var(--ink2);max-width:760px}
+
+.card{background:var(--card);border:2px solid var(--ink);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g32{grid-template-columns:1.6fr 1fr}
+.card h3{font-size:1.15rem;margin-bottom:4px}
+.card .sub{font-size:.82rem;color:var(--ink2);margin-bottom:12px}
+.chart{position:relative;height:300px}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;padding:2px 9px;border-radius:99px;border:1.5px solid var(--ink);margin:2px}
+
+/* Problem comparison: before / after torn paper */
+.versus{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:stretch}
+.vs{display:grid;place-items:center;font-family:'Fraunces';font-weight:900;font-size:1.6rem}
+.wall{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}
+.wall div{aspect-ratio:1;border-radius:3px;background:#e8e0d2;font-size:0}
+.wall div.hot{animation:blink 2.4s infinite}
+@keyframes blink{50%{background:var(--coral)}}
+.brief li{list-style:none;padding:9px 0;border-bottom:1px dashed var(--line);display:flex;gap:10px}
+.brief li b{color:var(--violet)}
+
+/* Driver tree */
+.tree{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px 70px;align-items:start;position:relative;padding-right:10px}
+.col{display:flex;flex-direction:column;gap:9px}
+.node{border:2px solid var(--ink);border-radius:12px;padding:9px 11px;background:var(--paper);cursor:pointer;font-size:.85rem;transition:.18s;position:relative;z-index:1}
+.node small{display:block;font-size:.7rem;color:var(--ink2)}
+.node:hover,.node.act{transform:translateX(3px);box-shadow:3px 3px 0 var(--ink)}
+.node.act{background:var(--ink);color:var(--paper)}.node.act small{color:#cfc8e0}
+.node.dim{opacity:.3}
+#wires{position:absolute;inset:0;pointer-events:none;z-index:0}
+.colh{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink2);font-weight:700}
+.explain{margin-top:14px;padding:14px;border-radius:12px;background:var(--paper2);font-size:.9rem;min-height:70px}
+
+/* controls */
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:99px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:6px 13px;font:600 .8rem 'Space Grotesk';cursor:pointer;color:var(--ink)}
+.seg button.on{background:var(--ink);color:var(--paper)}
+select,input[type=range]{accent-color:var(--coral)}
+select{font:600 .85rem 'Space Grotesk';border:2px solid var(--ink);border-radius:10px;padding:6px 10px;background:var(--paper)}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.big{font-family:'Fraunces';font-weight:900;font-size:2.4rem;line-height:1}
+.meter{height:12px;border-radius:99px;background:var(--paper2);border:1.5px solid var(--ink);overflow:hidden}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--lime),var(--violet));transition:width .4s}
+
+/* heatmap */
+.heat{display:grid;gap:3px;font-size:.72rem}
+.heat .c{border-radius:5px;display:grid;place-items:center;height:34px;cursor:pointer;font-family:'JetBrains Mono';font-weight:600;transition:transform .15s}
+.heat .c:hover{transform:scale(1.12);outline:2px solid var(--ink);z-index:2}
+.heat .h{font-weight:700;display:flex;align-items:center;font-size:.72rem}
+
+/* Analyst console */
+.console{background:var(--ink);color:var(--paper);border-radius:20px;padding:20px;border:2px solid var(--ink);box-shadow:8px 8px 0 var(--violet)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{border:1.5px solid #6d6788;background:transparent;color:var(--paper);border-radius:99px;padding:7px 13px;font:500 .82rem 'Space Grotesk';cursor:pointer;transition:.15s}
+.chip:hover,.chip.on{background:var(--tang);color:var(--ink);border-color:var(--tang)}
+.out{background:#272339;border-radius:14px;padding:16px;min-height:240px;font-size:.92rem}
+.out .q{color:var(--tang);font-family:'JetBrains Mono';font-size:.8rem;margin-bottom:8px}
+.out .cite{display:inline-block;background:#3a3456;color:#c9bfff;border-radius:6px;padding:0 6px;font-family:'JetBrains Mono';font-size:.72rem;margin:0 2px}
+.out .conf{margin-top:12px;display:flex;gap:10px;align-items:center;font-size:.78rem;color:#bcb5d4}
+.caret{display:inline-block;width:8px;height:1em;background:var(--tang);vertical-align:-2px;animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+.ev{margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ev div{background:#312c48;border-radius:10px;padding:9px;font-size:.75rem}
+.ev b{display:block;font-family:'Fraunces';font-size:1.2rem;color:var(--lime)}
+
+/* pipeline */
+.pipe{display:flex;gap:0;overflow-x:auto;padding-bottom:6px}
+.stage{flex:1;min-width:150px;padding:14px;border:2px solid var(--ink);margin-right:-2px;cursor:pointer;background:var(--card);transition:.2s;position:relative}
+.stage:first-child{border-radius:16px 0 0 16px}.stage:last-child{border-radius:0 16px 16px 0}
+.stage .n{font-family:'JetBrains Mono';font-size:.7rem;opacity:.6}
+.stage b{display:block;font-family:'Fraunces';font-size:1.02rem;margin-top:4px}
+.stage.on{color:#fff}
+.pdetail{margin-top:14px;display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+.pdetail ul{padding-left:18px}.pdetail li{margin:4px 0;font-size:.9rem}
+code.k{background:var(--paper2);padding:1px 6px;border-radius:5px;font-size:.8rem}
+
+footer{border-top:3px double var(--ink);padding:22px 28px;text-align:center;font-size:.8rem;color:var(--ink2)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:99px;font-size:.85rem;transition:.3s;z-index:9}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@media (max-width:980px){
+  .hero,.g2,.g3,.g32,.pdetail{grid-template-columns:1fr}
+  .layout{grid-template-columns:1fr}
+  .rail{position:sticky;top:0;z-index:5;display:flex;overflow-x:auto;background:var(--paper);padding:8px 0;border-bottom:1px solid var(--line)}
+  .rail a{border-left:0;border-bottom:3px solid transparent;white-space:nowrap}
+  .rail a.on{border-color:var(--coral)}
+  .versus{grid-template-columns:1fr}.tree{grid-template-columns:1fr}
+  #wires{display:none}.ev{grid-template-columns:1fr}
+}
+@media (max-width:600px){.mast,.hero,.layout{padding-left:16px;padding-right:16px}}
+</style>
+</head>
+<body>
+
+<div class="mast">
+  <div class="brand"><i></i>SIGNAL ROOM</div>
+  <div class="ticker mono"><span id="tick"></span></div>
+  <div class="mono">Edition · Q3 FY26 · Board Brief</div>
+</div>
+
+<section class="hero">
+  <div>
+    <span class="kicker">● Executive Decision Intelligence</span>
+    <h1>Hundreds of KPIs.<br><em>Seven that matter.</em></h1>
+    <p class="lede">An LLM-powered decision-intelligence system that links operational KPIs to financial outcomes, ranks the real drivers of performance, and writes evidence-backed briefs leaders can act on.</p>
+    <div class="stats">
+      <div class="pill"><b data-count="248">0</b><small>KPIs ingested</small></div>
+      <div class="pill"><b data-count="7">0</b><small>Causal drivers</small></div>
+      <div class="pill"><b data-count="86" data-suf="%">0</b><small>EBITDA variance explained</small></div>
+      <div class="pill"><b data-count="9" data-suf=" min">0</b><small>Brief turnaround</small></div>
+    </div>
+  </div>
+  <div class="noisebox">
+    <div class="lbl">Live · KPI universe → driver filter</div>
+    <div class="count"><span id="sigN">248</span><small>KPIs pass filter</small></div>
+    <canvas id="noise"></canvas>
+    <div class="ctl"><b>|impact| ≥</b><input type="range" id="thr" min="0" max="0.9" step="0.01" value="0"><span class="mono" id="thrV">0.00</span></div>
+  </div>
+</section>
+
+<div class="layout">
+  <nav class="rail" id="rail">
+    <a href="#c1"><span>01</span>The problem</a>
+    <a href="#c2"><span>02</span>Driver tree</a>
+    <a href="#c3"><span>03</span>Lead / lag lab</a>
+    <a href="#c4"><span>04</span>Variance bridge</a>
+    <a href="#c5"><span>05</span>Influence map</a>
+    <a href="#c6"><span>06</span>Ask the analyst</a>
+    <a href="#c7"><span>07</span>How it works</a>
+  </nav>
+  <main>
+
+  <!-- 01 -->
+  <section class="chap" id="c1">
+    <div class="chhead"><span class="no">01</span><h2>Drowning in dashboards, starving for answers</h2>
+    <p>Every department reports its own KPIs. The board sees 248 numbers a quarter — but nobody can say which ones actually moved revenue and margin.</p></div>
+    <div class="versus">
+      <div class="card"><h3>Today · the KPI wall</h3><div class="sub">248 indicators, 31 flashing red, no causal link to P&amp;L</div><div class="wall" id="wall"></div></div>
+      <div class="vs">→</div>
+      <div class="card"><h3>With Signal Room · the brief</h3><div class="sub">What changed, why, and what to do</div>
+        <ul class="brief">
+          <li><b>1.</b> EBITDA fell 2.1 pts, 61% explained by on-time delivery dropping from 94% → 87%.</li>
+          <li><b>2.</b> Delivery slipped 6 weeks after warehouse attrition spiked (lead indicator).</li>
+          <li><b>3.</b> Marketing spend ↑ 18% had near-zero effect on revenue — redirect $1.2M.</li>
+          <li><b>4.</b> Recommend: retention bonus for Tier-2 warehouse staff; ROI 4.3×.</li>
+        </ul></div>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section class="chap" id="c2">
+    <div class="chhead"><span class="no">02</span><h2>The KPI → value driver tree</h2>
+    <p>Click any node. The system traces how operational metrics flow through business drivers into financial outcomes, with learned effect sizes.</p></div>
+    <div class="card">
+      <div class="tree" id="tree">
+        <svg id="wires"></svg>
+        <div class="col" id="colA"><div class="colh">Operational KPIs</div></div>
+        <div class="col" id="colB"><div class="colh">Business drivers</div></div>
+        <div class="col" id="colC"><div class="colh">Financial outcomes</div></div>
+      </div>
+      <div class="explain" id="explain">👆 Select a KPI, driver or outcome to see its evidence trail.</div>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section class="chap" id="c3">
+    <div class="chhead"><span class="no">03</span><h2>Lead / lag laboratory</h2>
+    <p>Many KPIs predict outcomes months ahead. Shift the lag and watch the correlation with revenue sharpen — that peak is how the model finds leading indicators.</p></div>
+    <div class="grid g32">
+      <div class="card">
+        <div class="row"><select id="lagK"></select>
+          <label class="mono" style="font-size:.8rem">lag <input type="range" id="lag" min="0" max="6" value="0"> <b id="lagV">0</b> mo</label></div>
+        <div class="chart"><canvas id="lagChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Correlation with revenue</h3><div class="sub">Pearson r at current lag</div>
+        <div class="big" id="rVal">0.00</div>
+        <div class="meter" style="margin:10px 0 16px"><i id="rBar" style="width:0"></i></div>
+        <div class="chart" style="height:180px"><canvas id="lagProfile"></canvas></div>
+        <div class="sub" id="lagNote" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section class="chap" id="c4">
+    <div class="chhead"><span class="no">04</span><h2>Variance bridge — why EBITDA moved</h2>
+    <p>Quarter-over-quarter EBITDA change decomposed into driver contributions (Shapley attribution). Toggle the period, then click a bar for the narrative.</p></div>
+    <div class="grid g32">
+      <div class="card">
+        <div class="row"><div class="seg" id="qSeg"><button class="on" data-q="0">Q1 → Q2</button><button data-q="1">Q2 → Q3</button><button data-q="2">Q3 → Q4 (fcst)</button></div></div>
+        <div class="chart" style="height:330px"><canvas id="bridge"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Explained vs unexplained</h3><div class="sub">How much of the move the drivers account for</div>
+        <div class="chart" style="height:200px"><canvas id="donut"></canvas></div>
+        <div class="explain" id="bridgeNote">Click a bar to read its driver story.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section class="chap" id="c5">
+    <div class="chhead"><span class="no">05</span><h2>Cross-department influence map</h2>
+    <p>Which department's KPIs move which financial line? Hover a cell for the effect size; click to filter the ranked driver list.</p></div>
+    <div class="grid g2">
+      <div class="card"><h3>Influence heatmap</h3><div class="sub">Standardised effect (β) of department KPIs on outcome</div><div class="heat" id="heat"></div></div>
+      <div class="card"><h3 id="rankT">Top drivers · all outcomes</h3><div class="sub">Ranked by absolute impact, with confidence</div><div class="chart" style="height:330px"><canvas id="rank"></canvas></div></div>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section class="chap" id="c6">
+    <div class="chhead"><span class="no">06</span><h2>Ask the analyst</h2>
+    <p>The LLM layer answers executive questions in plain language — every claim grounded in a cited metric, model output or source table.</p></div>
+    <div class="console">
+      <div class="chips" id="chips"></div>
+      <div class="out" id="out"><span class="q">&gt; pick a question above</span><br><span class="caret"></span></div>
+    </div>
+  </section>
+
+  <!-- 07 -->
+  <section class="chap" id="c7">
+    <div class="chhead"><span class="no">07</span><h2>How the system works</h2>
+    <p>Five stages from raw KPI feeds to a board-ready brief. Click each stage.</p></div>
+    <div class="card">
+      <div class="pipe" id="pipe"></div>
+      <div class="pdetail"><div id="pText"></div><div class="chart" style="height:200px"><canvas id="pChart"></canvas></div></div>
+    </div>
+  </section>
+  </main>
+</div>
+
+<footer>Signal Room · Executive Decision Intelligence concept · Illustrative data for demonstration</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+const C={coral:'#ff5d5d',tang:'#ff9f1c',lime:'#2ec4b6',violet:'#7b4dff',sky:'#2d9cdb',pink:'#e8478b',ink:'#1d1a2e',ink2:'#55506b',line:'#e2d7c5'};
+Chart.defaults.font.family="'Space Grotesk',sans-serif";Chart.defaults.color=C.ink2;
+Chart.defaults.plugins.tooltip.backgroundColor=C.ink;Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.cornerRadius=10;
+let seed=7;const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647);
+const $=s=>document.querySelector(s);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._);t._=setTimeout(()=>t.classList.remove('show'),1800)}
+
+// ticker
+const tk=[['Revenue','+3.2%',1],['EBITDA margin','-2.1pt',0],['On-time delivery','87%',0],['NPS','+4',1],['Warehouse attrition','14%',0],['CAC','-6%',1],['Inventory turns','5.8',1],['Churn','2.9%',0],['Pipeline coverage','3.1×',1]];
+$('#tick').innerHTML=tk.map(t=>`${t[0]} <b class="${t[2]?'up':'dn'}">${t[1]} ${t[2]?'▲':'▼'}</b>`).join(' &nbsp;·&nbsp; ');
+
+// counters
+document.querySelectorAll('[data-count]').forEach(el=>{const n=+el.dataset.count,s=el.dataset.suf||'';let i=0;const st=()=>{i+=Math.max(1,n/40);el.textContent=Math.min(n,Math.round(i))+s;if(i<n)requestAnimationFrame(st)};st()});
+
+// ===== hero noise canvas =====
+const cv=$('#noise'),cx=cv.getContext('2d');const pal=[C.coral,C.tang,C.lime,C.violet,C.sky,C.pink];
+const kpis=Array.from({length:248},(_,i)=>{const imp=i<7?0.75+rnd()*.2:Math.pow(rnd(),2.6)*.8;return{x:rnd(),y:rnd(),vx:(rnd()-.5)*.0012,vy:(rnd()-.5)*.0012,imp,c:pal[i%6]}});
+let thr=0;
+function size(){const r=cv.getBoundingClientRect();cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio}
+size();addEventListener('resize',size);
+(function loop(){const W=cv.width,H=cv.height;cx.clearRect(0,0,W,H);const pass=kpis.filter(k=>k.imp>=thr);
+ kpis.forEach(k=>{const on=k.imp>=thr;const tx=on&&thr>.3?.5+(k.x-.5)*.45:k.x,ty=on&&thr>.3?.42+(k.y-.5)*.4:k.y;
+  k.x+=k.vx+(on&&thr>.3?(tx-k.x)*.0:0);k.y+=k.vy;if(k.x<0||k.x>1)k.vx*=-1;if(k.y<0||k.y>.82)k.vy*=-1;
+  const r=(on?3+k.imp*9:2)*devicePixelRatio;cx.beginPath();cx.arc(k.x*W,k.y*H,r,0,7);cx.fillStyle=on?k.c:'rgba(255,255,255,.12)';cx.globalAlpha=on?.9:1;cx.fill();cx.globalAlpha=1});
+ if(thr>.3){cx.strokeStyle='rgba(255,255,255,.25)';cx.lineWidth=devicePixelRatio;for(let i=0;i<pass.length;i++)for(let j=i+1;j<pass.length;j++){cx.beginPath();cx.moveTo(pass[i].x*W,pass[i].y*H);cx.lineTo(pass[j].x*W,pass[j].y*H);cx.stroke()}}
+ requestAnimationFrame(loop)})();
+$('#thr').oninput=e=>{thr=+e.target.value;$('#thrV').textContent=thr.toFixed(2);$('#sigN').textContent=kpis.filter(k=>k.imp>=thr).length};
+
+// wall
+$('#wall').innerHTML=Array.from({length:144},(_,i)=>`<div class="${rnd()<.18?'hot':''}" style="animation-delay:${(rnd()*2.4).toFixed(2)}s"></div>`).join('');
+
+// ===== driver tree =====
+const A=[['otd','On-time delivery','Ops · 87% (−7pt)'],['attr','Warehouse attrition','HR · 14% (+5pt)'],['nps','Net Promoter Score','CX · 41 (+4)'],['cac','Customer acq. cost','Mktg · $212 (−6%)'],['turns','Inventory turns','SCM · 5.8 (+0.4)'],['win','Sales win rate','Sales · 27% (+2pt)']];
+const B=[['ret','Customer retention','91.2% · −1.4pt'],['vol','Order volume','+3.8% QoQ'],['cost','Cost to serve','+$4.10 / order'],['price','Price realisation','98.6% of list']];
+const Cc=[['rev','Revenue','$412M · +3.2%'],['gm','Gross margin','38.4% · −0.9pt'],['ebitda','EBITDA','$61M · −2.1pt']];
+const L=[['otd','ret',.62],['otd','cost',.48],['attr','otd',.71],['attr','cost',.35],['nps','ret',.44],['nps','price',.22],['cac','vol',.12],['turns','cost',.31],['win','vol',.51],['win','price',.18],['ret','rev',.58],['vol','rev',.66],['price','rev',.29],['price','gm',.41],['cost','gm',.63],['cost','ebitda',.55],['ret','ebitda',.33],['gm','ebitda',.72],['rev','ebitda',.47]];
+const story={otd:'On-time delivery is the <b>#1 driver</b> of retention (β=0.62) and cost-to-serve (β=0.48). Its 7-pt drop explains ~61% of the EBITDA decline. Evidence: 36 months of order-level data, Granger p&lt;0.01.',attr:'Warehouse attrition is a <b>leading indicator</b> — it predicts on-time delivery 6 weeks later (β=0.71). Root cause, not symptom.',nps:'NPS lifts retention moderately (β=0.44) with a 2-month lag. Good news, but not enough to offset delivery issues.',cac:'CAC improved 6%, yet its link to order volume is weak (β=0.12). Spend efficiency ≠ growth — a <b>vanity signal</b> this quarter.',turns:'Inventory turns trim cost-to-serve (β=0.31); steady contributor.',win:'Sales win rate is the strongest volume lever (β=0.51), driving most of the 3.2% revenue gain.',ret:'Retention feeds revenue (β=0.58) and EBITDA directly via lower re-acquisition cost.',vol:'Order volume is the largest revenue contributor (β=0.66).',cost:'Cost to serve rose $4.10/order — the main margin drag (β=0.63 on GM).',price:'Price realisation held steady; minor positive on gross margin.',rev:'Revenue grew 3.2%, mainly volume-led (win rate) partially offset by retention loss.',gm:'Gross margin fell 0.9pt, driven by cost-to-serve.',ebitda:'EBITDA fell 2.1pt. Tracing upstream: cost-to-serve ← on-time delivery ← warehouse attrition. 86% of the move is explained.'};
+const mk=(arr,col)=>arr.forEach(([id,n,s])=>{const d=document.createElement('div');d.className='node';d.dataset.id=id;d.innerHTML=`${n}<small>${s}</small>`;d.onclick=()=>selNode(id);$('#'+col).appendChild(d)});
+mk(A,'colA');mk(B,'colB');mk(Cc,'colC');
+const colorFor=w=>w>.55?C.coral:w>.35?C.tang:C.lime;
+function wires(active){const svg=$('#wires'),tr=$('#tree').getBoundingClientRect();svg.setAttribute('width',tr.width);svg.setAttribute('height',tr.height);let h='';
+ L.forEach(([a,b,w])=>{const na=document.querySelector(`.node[data-id=${a}]`),nb=document.querySelector(`.node[data-id=${b}]`);const ra=na.getBoundingClientRect(),rb=nb.getBoundingClientRect();
+  let x1,y1,x2,y2;if(ra.left<rb.left){x1=ra.right-tr.left;x2=rb.left-tr.left}else{x1=ra.left-tr.left;x2=rb.right-tr.left}y1=ra.top+ra.height/2-tr.top;y2=rb.top+rb.height/2-tr.top;
+  if(Math.abs(ra.left-rb.left)<10){x1=ra.right-tr.left;x2=rb.right-tr.left;const mx=x1+40;h+=`<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="${colorFor(w)}" stroke-width="${1+w*5}" opacity="${active?(active.has(a)&&active.has(b)?.9:.07):.35}"/>`;return}
+  const m=(x1+x2)/2;h+=`<path d="M${x1},${y1} C${m},${y1} ${m},${y2} ${x2},${y2}" fill="none" stroke="${colorFor(w)}" stroke-width="${1+w*5}" stroke-linecap="round" opacity="${active?(active.has(a)&&active.has(b)?.9:.07):.35}"/>`});svg.innerHTML=h}
+function selNode(id){const set=new Set([id]);let grow=true;
+ const up=new Set([id]),dn=new Set([id]);for(let i=0;i<4;i++)L.forEach(([a,b])=>{if(dn.has(a))dn.add(b);if(up.has(b))up.add(a)});up.forEach(x=>set.add(x));dn.forEach(x=>set.add(x));
+ document.querySelectorAll('.node').forEach(n=>{n.classList.toggle('act',n.dataset.id===id);n.classList.toggle('dim',!set.has(n.dataset.id))});wires(set);
+ $('#explain').innerHTML=story[id]}
+setTimeout(()=>wires(),300);addEventListener('resize',()=>wires());
+
+// ===== lead/lag lab =====
+const months=Array.from({length:30},(_,i)=>{const d=new Date(2024,i,1);return d.toLocaleString('en',{month:'short'})+' '+String(d.getFullYear()).slice(2)});
+const base=months.map((_,i)=>Math.sin(i/3.2)*8+i*.6+(rnd()-.5)*3);
+const revenue=base.map(v=>100+v);
+const lagDefs={'Warehouse attrition (inv.)':[3,1.0],'On-time delivery':[1,.95],'Sales pipeline':[4,.9],'NPS':[2,.7],'Marketing spend':[0,.25],'Website traffic':[5,.35]};
+const series={};Object.entries(lagDefs).forEach(([k,[lg,q]])=>{series[k]=months.map((_,i)=>{const src=base[Math.min(29,i+lg)];return 50+src*q+(rnd()-.5)*(10*(1-q)+2)})});
+Object.keys(series).forEach(k=>$('#lagK').insertAdjacentHTML('beforeend',`<option>${k}</option>`));
+const pear=(a,b)=>{const n=a.length,ma=a.reduce((s,x)=>s+x)/n,mb=b.reduce((s,x)=>s+x)/n;let c=0,va=0,vb=0;for(let i=0;i<n;i++){c+=(a[i]-ma)*(b[i]-mb);va+=(a[i]-ma)**2;vb+=(b[i]-mb)**2}return c/Math.sqrt(va*vb)};
+const rAt=(k,l)=>pear(series[k].slice(0,30-l),revenue.slice(l));
+const lagChart=new Chart($('#lagChart'),{type:'line',data:{labels:months,datasets:[{label:'Revenue index',data:revenue,borderColor:C.violet,backgroundColor:'rgba(123,77,255,.12)',fill:true,tension:.35,pointRadius:0,borderWidth:3},{label:'KPI (shifted)',data:[],borderColor:C.tang,tension:.35,pointRadius:0,borderWidth:3,borderDash:[6,4],yAxisID:'y2'}]},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',align:'end'}},scales:{x:{grid:{display:false}},y:{grid:{color:C.line}},y2:{position:'right',grid:{display:false}}}}});
+const lagProfile=new Chart($('#lagProfile'),{type:'bar',data:{labels:[0,1,2,3,4,5,6].map(x=>x+'m'),datasets:[{data:[],backgroundColor:[],borderRadius:6}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'r = '+c.raw.toFixed(2)}}},scales:{y:{min:-1,max:1,grid:{color:C.line}},x:{grid:{display:false}}},onClick:(e,el)=>{if(el[0]){$('#lag').value=el[0].index;updLag()}}}});
+function updLag(){const k=$('#lagK').value,l=+$('#lag').value;$('#lagV').textContent=l;
+ const sh=months.map((_,i)=>i-l>=0?series[k][i-l]:null);lagChart.data.datasets[1].data=sh;lagChart.data.datasets[1].label=k+` (+${l}m)`;lagChart.update();
+ const r=rAt(k,l);$('#rVal').textContent=r.toFixed(2);$('#rVal').style.color=Math.abs(r)>.8?C.lime:Math.abs(r)>.5?C.tang:C.coral;$('#rBar').style.width=Math.abs(r)*100+'%';
+ const prof=[0,1,2,3,4,5,6].map(x=>rAt(k,x)),best=prof.indexOf(Math.max(...prof));
+ lagProfile.data.datasets[0].data=prof;lagProfile.data.datasets[0].backgroundColor=prof.map((_,i)=>i===l?C.ink:i===best?C.coral:'#d9cfbf');lagProfile.update();
+ $('#lagNote').innerHTML=`Peak at <b>${best} month${best!==1?'s':''}</b> (r=${prof[best].toFixed(2)}). ${prof[best]>.8?'✅ Strong leading indicator — promote to board pack.':prof[best]>.5?'⚠️ Moderate signal — monitor.':'❌ Weak link — candidate to drop from exec reporting.'}`}
+$('#lagK').onchange=updLag;$('#lag').oninput=updLag;updLag();
+
+// ===== variance bridge =====
+const Q=[{s:58.2,d:[['Volume',3.1],['Price',0.8],['Retention',-0.6],['Cost to serve',-0.9],['Labour',-0.4],['FX',0.3]],u:0.4},
+ {s:61.3,d:[['Volume',2.4],['Price',0.2],['Retention',-2.1],['Cost to serve',-3.8],['Labour',-1.2],['FX',-0.3]],u:-0.7},
+ {s:55.8,d:[['Volume',1.9],['Price',0.6],['Retention',0.9],['Cost to serve',1.7],['Labour',-0.5],['FX',0.1]],u:0.3}];
+const bNotes={'Volume':'Win-rate gains in mid-market lifted order volume.','Price':'Price realisation largely held; discounting contained.','Retention':'Churn rose in accounts with 2+ late deliveries in a quarter.','Cost to serve':'Expedited freight & re-shipments after delivery misses — the biggest single drag.','Labour':'Overtime and temp staffing to cover warehouse vacancies.','FX':'Currency translation; outside management control.','Unexplained':'Residual not attributed to modelled drivers — flagged for analyst review.'};
+let bridge,donut;
+function drawBridge(qi){const q=Q[qi];const lab=['Start',...q.d.map(x=>x[0]),'Unexplained','End'];let run=q.s;const fl=[[0,q.s]];const col=[C.ink];
+ [...q.d,['Unexplained',q.u]].forEach(([n,v])=>{fl.push([run,run+v]);run+=v;col.push(n==='Unexplained'?'#b8afa0':v>=0?C.lime:C.coral)});fl.push([0,run]);col.push(C.violet);
+ const data={labels:lab,datasets:[{data:fl,backgroundColor:col,borderRadius:6,borderSkipped:false}]};
+ if(!bridge)bridge=new Chart($('#bridge'),{type:'bar',data,options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const[a,b]=c.raw;const i=c.dataIndex;return(i===0||i===lab.length-1)?`$${b.toFixed(1)}M`:`${b-a>=0?'+':''}${(b-a).toFixed(1)} $M`}}}},scales:{y:{min:45,grid:{color:C.line},title:{display:true,text:'EBITDA $M'}},x:{grid:{display:false}}},
+  onClick:(e,el)=>{if(!el[0])return;const n=bridge.data.labels[el[0].index];const r=bridge.data.datasets[0].data[el[0].index];$('#bridgeNote').innerHTML=`<b>${n}</b>: ${bNotes[n]||(n==='Start'?'Opening EBITDA':'Closing EBITDA')} ${bNotes[n]?`<span class="tag">${(r[1]-r[0]>=0?'+':'')+(r[1]-r[0]).toFixed(1)} $M</span>`:''}`}}});
+ else{bridge.data=data;bridge.update()}
+ const expl=q.d.reduce((s,x)=>s+Math.abs(x[1]),0),un=Math.abs(q.u);
+ const dd={labels:['Explained','Unexplained'],datasets:[{data:[expl,un],backgroundColor:[C.violet,'#e2d7c5'],borderWidth:0}]};
+ if(!donut)donut=new Chart($('#donut'),{type:'doughnut',data:dd,options:{maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.label}: ${(c.raw/(expl+un)*100).toFixed(0)}%`}}}},plugins:[{id:'c',afterDraw(ch){const{ctx,chartArea:a}=ch;const d=ch.data.datasets[0].data;ctx.save();ctx.font="900 26px Fraunces";ctx.fillStyle=C.ink;ctx.textAlign='center';ctx.fillText(Math.round(d[0]/(d[0]+d[1])*100)+'%',(a.left+a.right)/2,(a.top+a.bottom)/2+8);ctx.restore()}}]});
+ else{donut.data=dd;donut.update()}}
+document.querySelectorAll('#qSeg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#qSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');drawBridge(+b.dataset.q);toast('Bridge updated · '+b.textContent)});
+drawBridge(1);document.querySelectorAll('#qSeg button').forEach((x,i)=>x.classList.toggle('on',i===1));
+
+// ===== heatmap + rank =====
+const depts=['Operations','HR','Sales','Marketing','Customer Svc','Supply Chain'],outs=['Revenue','Gross margin','EBITDA','Cash flow'];
+const M=[[.42,.58,.66,.38],[.18,.31,.44,.22],[.71,.12,.39,.25],[.15,-.05,-.08,-.11],[.36,.14,.27,.19],[.12,.49,.41,.57]];
+const drv={Operations:[['On-time delivery',.66],['Order accuracy',.38]],HR:[['Warehouse attrition',-.52],['Overtime hours',-.24]],Sales:[['Win rate',.61],['Pipeline coverage',.47]],Marketing:[['Marketing spend',.09],['Lead volume',.14]],'Customer Svc':[['NPS',.41],['First-contact resolution',.22]],'Supply Chain':[['Inventory turns',.44],['Supplier lead time',-.33]]};
+const hc=v=>{const a=Math.abs(v);if(v<0)return`rgba(255,93,93,${.25+a*1.2})`;return a>.55?C.violet:a>.4?'#9d7bff':a>.25?'#c6b4ff':'#ece4ff'};
+let h=`<div style="display:grid;grid-template-columns:110px repeat(4,1fr);gap:3px"><div></div>${outs.map(o=>`<div class="h" style="justify-content:center">${o}</div>`).join('')}`;
+depts.forEach((d,i)=>{h+=`<div class="h">${d}</div>`+M[i].map((v,j)=>`<div class="c" data-d="${d}" data-o="${outs[j]}" title="${d} → ${outs[j]}: β=${v}" style="background:${hc(v)};color:${Math.abs(v)>.4?'#fff':C.ink}">${v.toFixed(2)}</div>`).join('')});
+$('#heat').innerHTML=h+'</div>';
+const rank=new Chart($('#rank'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:[],borderRadius:8}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'β = '+c.raw.toFixed(2)}}},scales:{x:{min:-.8,max:.8,grid:{color:C.line}},y:{grid:{display:false}}}}});
+function rankFor(dept,out){let list=[];const oi=out?outs.indexOf(out):-1;Object.entries(drv).forEach(([d,arr])=>{if(dept&&d!==dept)return;const di=depts.indexOf(d);arr.forEach(([n,b])=>{const f=oi>=0?M[di][oi]/Math.max(.01,Math.max(...M[di].map(Math.abs))):1;list.push([n+' · '+d.split(' ')[0],b*Math.abs(f)])})});
+ list.sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));rank.data.labels=list.map(x=>x[0]);rank.data.datasets[0].data=list.map(x=>x[1]);rank.data.datasets[0].backgroundColor=list.map(x=>x[1]<0?C.coral:Math.abs(x[1])>.4?C.violet:C.sky);rank.update();
+ $('#rankT').textContent=dept?`Drivers · ${dept} → ${out}`:'Top drivers · all outcomes'}
+document.querySelectorAll('.heat .c').forEach(c=>c.onclick=()=>{rankFor(c.dataset.d,c.dataset.o);toast(`Filtered: ${c.dataset.d} → ${c.dataset.o}`)});
+rankFor();
+
+// ===== Ask the analyst =====
+const QA=[
+ ['Why did EBITDA fall this quarter?',`EBITDA declined <b>2.1 pts ($5.0M)</b>. 86% is explained by three linked drivers: <b>cost-to-serve rose $4.10/order</b> <span class="cite">[bridge:Q3]</span>, driven by expedited freight after <b>on-time delivery fell to 87%</b> <span class="cite">[ops.otd_daily]</span>, which itself followed a <b>warehouse attrition spike to 14%</b> six weeks earlier <span class="cite">[hr.attrition · lag=6w, r=0.81]</span>. Volume growth (+$2.4M) partly offset the decline.`,[['−$3.8M','Cost to serve'],['−$2.1M','Retention'],['+$2.4M','Volume']],92],
+ ['Which KPIs should I stop tracking?',`Of 248 KPIs, <b>173 show no statistically meaningful link</b> to any financial outcome over 36 months <span class="cite">[model:driver_screen v4]</span>. Top candidates to drop from the board pack: <b>social impressions, email open rate, meeting count per rep, raw ticket volume</b> — each |β| &lt; 0.05. Keep them at department level; remove from executive view to cut noise by ~70%.`,[['173','No-signal KPIs'],['70%','Noise cut'],['75','Kept']],88],
+ ['Where should we invest $2M next quarter?',`Highest expected return: <b>warehouse retention programme</b> (est. ROI 4.3×) <span class="cite">[sim:scenario_14]</span> — reducing attrition 4 pts is projected to restore on-time delivery to 93% and recover <b>$3.1M EBITDA</b>. Second: <b>sales enablement</b> for mid-market (ROI 2.6×). Lowest: incremental paid marketing (ROI 0.4×) <span class="cite">[mktg.mmm_q3]</span>.`,[['4.3×','Retention ROI'],['2.6×','Sales ROI'],['0.4×','Mktg ROI']],79],
+ ['What is our biggest early-warning signal?',`<b>Warehouse attrition</b> is the strongest leading indicator in the system — it predicts on-time delivery with a <b>6-week lead</b> (r=0.81) and EBITDA with a <b>3-month lead</b> <span class="cite">[lag_lab · granger p&lt;0.01]</span>. It currently reads <b>amber</b>: 12.6% and falling after the October pay review <span class="cite">[hr.weekly]</span>.`,[['6 wk','Lead time'],['0.81','Correlation'],['Amber','Status']],90],
+ ['Is the marketing budget increase working?',`Not yet. Spend rose <b>18%</b> but the modelled revenue effect is <b>+0.3%</b> (95% CI −0.4% to +1.0%) <span class="cite">[mktg.mmm_q3]</span>. CAC improved, but mostly through cheaper low-intent leads with a 40% lower win rate <span class="cite">[crm.lead_quality]</span>. Recommend reallocating ~$1.2M toward retention.`,[['+18%','Spend'],['+0.3%','Revenue effect'],['$1.2M','Reallocate']],74]];
+QA.forEach((q,i)=>$('#chips').insertAdjacentHTML('beforeend',`<button class="chip" data-i="${i}">${q[0]}</button>`));
+let typing;
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');const[q,a,ev,cf]=QA[+c.dataset.i];
+ clearInterval(typing);const out=$('#out');out.innerHTML=`<div class="q">&gt; ${q}</div><div id="ans"></div>`;const ans=$('#ans');
+ const tokens=a.split(/(<[^>]+>)/).flatMap(t=>t.startsWith('<')?[t]:t.split(/(\s+)/));let i=0,buf='';
+ typing=setInterval(()=>{buf+=tokens[i++]||'';ans.innerHTML=buf+'<span class="caret"></span>';if(i>=tokens.length){clearInterval(typing);ans.innerHTML=buf+`<div class="ev">${ev.map(e=>`<div><b>${e[0]}</b>${e[1]}</div>`).join('')}</div><div class="conf">Confidence <div class="meter" style="width:140px;border-color:#6d6788"><i style="width:${cf}%"></i></div> ${cf}% · sources verified</div>`}},28)});
+setTimeout(()=>document.querySelector('.chip').click(),600);
+
+// ===== pipeline =====
+const P=[['Ingest','Connect KPI feeds',C.sky,['ERP, CRM, HRIS, WMS, finance ledgers','248 KPIs normalised to a semantic layer','Daily refresh, data-quality scoring'],[248,240,236,231,248]],
+ ['Link','Map KPI → outcome',C.lime,['Knowledge graph of KPI definitions & owners','LLM reads metric docs to propose links','Analysts approve / reject edges'],[40,72,110,131,138]],
+ ['Learn','Find causal drivers',C.tang,['Lagged regression + Granger causality','Shapley value attribution for variance','Driver screen: 248 → 75 → 7'],[248,140,75,22,7]],
+ ['Explain','Generate insights',C.coral,['LLM (RAG) over model outputs & tables','Every claim must carry a citation','Hallucination guard: numbers re-checked'],[62,74,81,88,93]],
+ ['Brief','Deliver to execs',C.violet,['Weekly board brief + live Q&A console','Alerts on leading-indicator breaches','Feedback loop improves rankings'],[3,7,12,18,26]]];
+const pLab=[['Wk1','Wk2','Wk3','Wk4','Wk5'],['v1','v2','v3','v4','v5'],['All','Corr.','Lagged','Granger','Shapley'],['M1','M2','M3','M4','M5'],['M1','M2','M3','M4','M5']];
+const pTitle=['KPIs ingested','Approved KPI→outcome links','KPIs surviving each filter','Insight accuracy %','Decisions informed / month'];
+$('#pipe').innerHTML=P.map((p,i)=>`<div class="stage" data-i="${i}"><span class="n">0${i+1}</span><b>${p[0]}</b><small>${p[1]}</small></div>`).join('');
+let pc;
+function selP(i){document.querySelectorAll('.stage').forEach((s,j)=>{s.classList.toggle('on',j===i);s.style.background=j===i?P[i][2]:''});
+ $('#pText').innerHTML=`<h3 style="color:${P[i][2]}">${P[i][0]} — ${P[i][1]}</h3><ul>${P[i][3].map(x=>`<li>${x}</li>`).join('')}</ul>`;
+ const d={labels:pLab[i],datasets:[{label:pTitle[i],data:P[i][4],backgroundColor:P[i][2],borderColor:P[i][2],borderRadius:8,tension:.35,fill:false,borderWidth:3}]};
+ if(pc)pc.destroy();pc=new Chart($('#pChart'),{type:i===2?'bar':'line',data:d,options:{maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{x:{grid:{display:false}},y:{grid:{color:C.line}}}}})}
+document.querySelectorAll('.stage').forEach(s=>s.onclick=()=>selP(+s.dataset.i));selP(2);
+
+// rail spy
+const links=[...document.querySelectorAll('.rail a')];
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)links.forEach(l=>l.classList.toggle('on',l.getAttribute('href')==='#'+e.target.id))}),{rootMargin:'-40% 0px -55% 0px'});
+document.querySelectorAll('.chap').forEach(c=>io.observe(c));
+</script>
+</body>
+</html>
